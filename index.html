@@ -1,0 +1,522 @@
+﻿<!DOCTYPE html>
+<html lang="pl">
+
+	<!-- 
+		begin head
+		wlasciwe to w sekcji head nie ma sensu nic zmieniac 
+		autora witryny ustawilem na GeoIT
+	-->
+	
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="description" content="Mapa Wydziału Informatyki, Matematyki i Fizyki UMCS">
+    <meta name="author" content="GeoIT">
+    <title>Mapa MFI</title>
+    <!-- CSS Bootstrap'a -->
+    <link href="bootstrap.min.css" rel="stylesheet">
+    <!-- Style dla tego szablonu -->
+    <link href="css.css" rel="stylesheet">
+    <!-- Style bootstrap-map-js i js api -->
+    <link rel="stylesheet" type="text/css" href="esri.css">   
+    <link rel="stylesheet" type="text/css" href="bootstrapmap.css">   
+  </head>
+  
+	<!--
+	end head
+	P.S Pozdrawiam wszystkich czytających ten kod : >
+  -->
+  
+  <body>
+    <!-- pasek tytułowy-->
+	
+    <div class="navbar navbar-inverse navbar-fixed-top"> 
+	
+      <div class="container">
+	  
+        <div class="navbar-header">
+          <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-collapse">
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+          </button>
+		  
+          <a class="navbar-brand">Mapa MFI</a>
+		  
+        </div>
+		
+		<!-- uwazaj tutaj na id="Analizy" 
+			 oraz sprawy zwiazane z komunikacja z JavaScript -->
+		
+        <div class="collapse navbar-collapse">
+		
+          <ul class="nav navbar-nav">
+		  
+		  <!-- Menu loaklizacja i analizy-->
+			<li class="dropdown" id="warstwaUnique">
+			
+              <a href="#" class="dropdown-toggle" data-toggle="dropdown">Poziom<b class="caret"></b></a>
+			  
+              <ul class="dropdown-menu" id="myDropdown1">
+				<li><a href="#">-1</a></li>
+				<li><a href="#">0</a></li>
+				<li><a href="#">1</a></li>
+				<li><a href="#">2</a></li>
+				<li><a href="#">3</a></li>
+				<li><a href="#">4</a></li>
+				<li><a href="#">5</a></li>
+				<li><a href="#">6</a></li>
+				<li><a href="#">7</a></li>
+				<li><a href="#">8</a></li>
+				<li><a href="#">9</a></li>
+				
+              </ul>
+			  
+            </li>
+		  
+		  
+		  <!-- Menu wyboru mapy bazowej-->
+            <li class="dropdown" id="basemapList">
+              <a href="#" class="dropdown-toggle" data-toggle="dropdown">Mapa podkładowa <b class="caret"></b></a>
+              <ul class="dropdown-menu" id="myDropdown">
+				<li><a href="#">Mapa OSM</a></li>
+				<li><a href="#">Mapa drogowa</a></li>
+              </ul>
+            </li>
+			
+          </ul>
+		  
+        </div>
+      </div>  
+    </div>
+	
+	
+	 <!-- Okienko informacyjne do analiz-->
+	<div class="modal fade bs-example-modal-sm" id="load" style="display: none;" aria-hidden="true">
+        <div class="modal-dialog modal-sm">
+            <div class="modal-content">
+			<div class="modal-header" id="header">
+				<button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>
+				<h4 class="modal-title" id="title">Informacje</h4>
+			</div>
+            <div class="modal-body" id="wait" style="text-align:center">
+                  Chwileczkę...<img src="http://demo.esri.pl/images/wheel.gif"/>
+            </div>
+            </div><
+        </div><
+    </div>
+	
+	
+	
+    <!-- Mapa Bootstrap-map-js -->
+	<div id="mapDiv">
+		<div id="locateButtonCss"></div>
+	</div>
+    <script type="text/javascript">
+      var package_path = window.location.pathname.substring(0, window.location.pathname.lastIndexOf('/'));
+      var dojoConfig = {
+          // Wczytywanie api z CDN i lokalnych modułów z poprawnej lokalizacji
+          packages: [{
+              name: "application",
+              location: package_path + '../../../bootstrap/src/js'
+          }]
+      };
+	  
+	  
+	  
+    </script>
+	<!-- Odwołanie do kompaktowej wersji JS API -->
+    <script src="init.js"></script>
+	
+    <script>
+		//wczytanie odpowiednich modułów za pomocą AMD
+        require(["esri/map", "esri/dijit/Popup", "esri/dijit/PopupTemplate",
+		"esri/layers/FeatureLayer", "esri/tasks/FeatureSet", "esri/geometry/Point","esri/graphicsUtils", "esri/graphic",
+		"esri/tasks/ServiceAreaTask","esri/tasks/ServiceAreaParameters","esri/tasks/ClosestFacilityTask", "esri/tasks/ClosestFacilityParameters",
+		"esri/SpatialReference", "esri/geometry/webMercatorUtils", "esri/config",
+		"esri/symbols/SimpleMarkerSymbol","esri/symbols/SimpleFillSymbol", "esri/symbols/SimpleLineSymbol", "esri/Color",
+		"esri/dijit/LocateButton", "esri/dijit/Scalebar", "dojo/number", "esri/urlUtils",
+		"application/bootstrapmap",
+		"dojo/dom-class", "dojo/dom-construct", "dojo/on", "dojo/dom", "dojo/_base/array",
+		"dojo/domReady!"],
+		//przypisanie odpowiednich aliasów argumentów funkcji
+          function(Map, Popup, PopupTemplate,
+		  FeatureLayer,FeatureSet, Point, graphicsUtils, Graphic,
+		  ServiceAreaTask, ServiceAreaParameters, ClosestFacilityTask, ClosestFacilityParameters,
+		  SpatialReference, webMercatorUtils, esriConfig,
+		  SimpleMarkerSymbol,SimpleFillSymbol, SimpleLineSymbol, Color,
+		  LocateButton, Scalebar, number, urlUtils,
+		  BootstrapMap,
+		  domClass, domConstruct, on, dom, array
+		) {
+			/* !# IDStart 
+				Tutaj zaczynamy wlasciwe kodowanie */
+		
+		
+			/* !# start 
+				Moje komentarze 
+				Etap 1.0 oraz pierwsza część Etapu 1.1 odpowiadają za wczytanie map bazowych,
+				zarówno mapy Osiedli mieszkaniowych (OSM) jak i map drogowych.
+			*/
+			
+			
+			//Etap 1.0: Konstrukcja mapy i określenie jej właściwości
+			 var map = BootstrapMap.create("mapDiv", { 	//utworzenie nowej mapy bootstrap i podanie elementu <div>, w którym ma być osadzona mapa
+              basemap: "streets",   			//typ mapy bazowej - ulice
+              center: [22.540, 51.245], 		//domyślny środek mapy jako długość i szerokość geograficzna 
+			  /* center: [20.995, 52.236], */
+              zoom: 14, 				//powiększenie (skala) mapy					
+              scrollWheelZoom: false			//wyłączenie rolki myszy do powiększania/pomniejszania mapy
+            });
+
+					
+			//Etap 1.1: Konstrukcja nowego okna podręcznego
+			var oknoPod = new Popup({				//nowy obiekt (widżet) typu popup
+					titleInBody: false				//brak tytułu w zawartości okna
+			}, domConstruct.create("div"));			//utworzenie nowego elementu <div> dla okna podręcznego
+				
+			map.infoWindow= oknoPod;				//przypisanie okna podręcznego do mapy
+			
+			/* !# koniec
+				Moje komentarze
+			*/
+			
+			//Definicja szablonu okna podręcznego
+			var szablon = new PopupTemplate({			//nowy obiekt typu PopupTemplate
+					title: "Stacja rowerowa",			//przypisanie tytuł okna jako teskt 'Stacja rowerowa'
+					description: "{Nazwa}" 				//opis ma zostać pobrany z pola o nazwie 'Nazwa' ()
+			});
+			
+			
+			//Etap 2.0: Dodanie do mapy jako warstwy, usługi obiektów (feature service) z danymi wektorowymi z ArcGIS Online
+			
+			/* !# start
+				Moje komentarze
+				
+				W poniższym przypadku pobierana jest jedna warstwa, która dodawana jest na poprzednio wczytaną mapę.
+				
+				W przypadku MFI będziemy mieli kilka warstw.
+				
+				Warto zwrócić uwagę na infoTemplate: szablon, odnosi się on do powyższe zmiennej o nazwie szablon,
+				pozwala na wyświetlanie opisu i nazwy.
+			*/
+			
+			/* Oryginalny kod źródłowy
+			
+			var rowery = new FeatureLayer(				//nowy obiekt typu FeatureLayer
+				"http://services.arcgis.com/zg6BBB0wvjzrRBLk/arcgis/rest/services/stacjeRowerowe/FeatureServer/0", { //adres URL usługi
+				mode: FeatureLayer.MODE_SNAPSHOT,		//tryb zapytania - dodanie wszystkich danych do mapy
+				outFields: ["*"],				//pobranie wszystkich pól z tabeli atrybutów warstwy, w tym pole 'Nazwa'
+				infoTemplate: szablon			//przypisanie szablonu okna podręcznego do wyświetlenia atrybutów obiektów na mapie
+			});
+			
+			!# Koniec */
+			
+			/* !# Start
+				sekcja wczytujaca domyslny poziom (parter) */
+				
+				
+				
+			var piwnica = new FeatureLayer(				//nowy obiekt typu FeatureLayer
+				"http://services2.arcgis.com/efCSZ41PyIWbmjYh/arcgis/rest/services/Budynki2/FeatureServer/0", { //adres URL usługi
+				mode: FeatureLayer.MODE_SNAPSHOT,		//tryb zapytania - dodanie wszystkich danych do mapy
+				outFields: ["*"],				//pobranie wszystkich pól z tabeli atrybutów warstwy, w tym pole 'Nazwa'
+				infoTemplate: szablon			//przypisanie szablonu okna podręcznego do wyświetlenia atrybutów obiektów na mapie
+			});
+			map.addLayer(piwnica); 					//dodanie warstwy do mapy
+			piwnica.hide();
+			
+			
+			
+			var pierwsze = new FeatureLayer(				//nowy obiekt typu FeatureLayer
+				"http://services2.arcgis.com/efCSZ41PyIWbmjYh/arcgis/rest/services/budynki/FeatureServer/0", { //adres URL usługi
+				mode: FeatureLayer.MODE_SNAPSHOT,		//tryb zapytania - dodanie wszystkich danych do mapy
+				outFields: ["*"],				//pobranie wszystkich pól z tabeli atrybutów warstwy, w tym pole 'Nazwa'
+				infoTemplate: szablon			//przypisanie szablonu okna podręcznego do wyświetlenia atrybutów obiektów na mapie
+			});
+			map.addLayer(pierwsze); 					//dodanie warstwy do mapy
+			pierwsze.hide();
+			
+			
+			
+			var drugie = new FeatureLayer(				//nowy obiekt typu FeatureLayer
+				"http://services2.arcgis.com/efCSZ41PyIWbmjYh/arcgis/rest/services/budynki/FeatureServer/0", { //adres URL usługi
+				mode: FeatureLayer.MODE_SNAPSHOT,		//tryb zapytania - dodanie wszystkich danych do mapy
+				outFields: ["*"],				//pobranie wszystkich pól z tabeli atrybutów warstwy, w tym pole 'Nazwa'
+				infoTemplate: szablon			//przypisanie szablonu okna podręcznego do wyświetlenia atrybutów obiektów na mapie
+			});
+			map.addLayer(drugie); 					//dodanie warstwy do mapy
+			drugie.hide();
+			
+			
+			
+			var trzecie = new FeatureLayer(				//nowy obiekt typu FeatureLayer
+				"http://services2.arcgis.com/efCSZ41PyIWbmjYh/arcgis/rest/services/budynki/FeatureServer/0", { //adres URL usługi
+				mode: FeatureLayer.MODE_SNAPSHOT,		//tryb zapytania - dodanie wszystkich danych do mapy
+				outFields: ["*"],				//pobranie wszystkich pól z tabeli atrybutów warstwy, w tym pole 'Nazwa'
+				infoTemplate: szablon			//przypisanie szablonu okna podręcznego do wyświetlenia atrybutów obiektów na mapie
+			});
+			map.addLayer(trzecie); 					//dodanie warstwy do mapy
+			trzecie.hide();
+			
+			
+			
+			var czwarte = new FeatureLayer(				//nowy obiekt typu FeatureLayer
+				"http://services2.arcgis.com/efCSZ41PyIWbmjYh/arcgis/rest/services/budynki/FeatureServer/0", { //adres URL usługi
+				mode: FeatureLayer.MODE_SNAPSHOT,		//tryb zapytania - dodanie wszystkich danych do mapy
+				outFields: ["*"],				//pobranie wszystkich pól z tabeli atrybutów warstwy, w tym pole 'Nazwa'
+				infoTemplate: szablon			//przypisanie szablonu okna podręcznego do wyświetlenia atrybutów obiektów na mapie
+			});
+			map.addLayer(czwarte); 					//dodanie warstwy do mapy
+			czwarte.hide();
+			
+			
+			
+			var piate = new FeatureLayer(				//nowy obiekt typu FeatureLayer
+				"http://services2.arcgis.com/efCSZ41PyIWbmjYh/arcgis/rest/services/budynki/FeatureServer/0", { //adres URL usługi
+				mode: FeatureLayer.MODE_SNAPSHOT,		//tryb zapytania - dodanie wszystkich danych do mapy
+				outFields: ["*"],				//pobranie wszystkich pól z tabeli atrybutów warstwy, w tym pole 'Nazwa'
+				infoTemplate: szablon			//przypisanie szablonu okna podręcznego do wyświetlenia atrybutów obiektów na mapie
+			});
+			map.addLayer(piate); 					//dodanie warstwy do mapy
+			piate.hide();
+			
+			var szoste = new FeatureLayer(				//nowy obiekt typu FeatureLayer
+				"http://services2.arcgis.com/efCSZ41PyIWbmjYh/arcgis/rest/services/budynki/FeatureServer/0", { //adres URL usługi
+				mode: FeatureLayer.MODE_SNAPSHOT,		//tryb zapytania - dodanie wszystkich danych do mapy
+				outFields: ["*"],				//pobranie wszystkich pól z tabeli atrybutów warstwy, w tym pole 'Nazwa'
+				infoTemplate: szablon			//przypisanie szablonu okna podręcznego do wyświetlenia atrybutów obiektów na mapie
+			});
+			map.addLayer(szoste); 					//dodanie warstwy do mapy
+			szoste.hide();
+			
+			
+			
+			var siodme = new FeatureLayer(				//nowy obiekt typu FeatureLayer
+				"http://services2.arcgis.com/efCSZ41PyIWbmjYh/arcgis/rest/services/budynki/FeatureServer/0", { //adres URL usługi
+				mode: FeatureLayer.MODE_SNAPSHOT,		//tryb zapytania - dodanie wszystkich danych do mapy
+				outFields: ["*"],				//pobranie wszystkich pól z tabeli atrybutów warstwy, w tym pole 'Nazwa'
+				infoTemplate: szablon			//przypisanie szablonu okna podręcznego do wyświetlenia atrybutów obiektów na mapie
+			});
+			map.addLayer(siodme); 					//dodanie warstwy do mapy
+			siodme.hide();
+			
+			var osme = new FeatureLayer(				//nowy obiekt typu FeatureLayer
+				"http://services2.arcgis.com/efCSZ41PyIWbmjYh/arcgis/rest/services/budynki/FeatureServer/0", { //adres URL usługi
+				mode: FeatureLayer.MODE_SNAPSHOT,		//tryb zapytania - dodanie wszystkich danych do mapy
+				outFields: ["*"],				//pobranie wszystkich pól z tabeli atrybutów warstwy, w tym pole 'Nazwa'
+				infoTemplate: szablon			//przypisanie szablonu okna podręcznego do wyświetlenia atrybutów obiektów na mapie
+			});
+			map.addLayer(osme); 					//dodanie warstwy do mapy
+			osme.hide();		
+			
+			var dziewiate = new FeatureLayer(				//nowy obiekt typu FeatureLayer
+				"http://services2.arcgis.com/efCSZ41PyIWbmjYh/arcgis/rest/services/budynki/FeatureServer/0", { //adres URL usługi
+				mode: FeatureLayer.MODE_SNAPSHOT,		//tryb zapytania - dodanie wszystkich danych do mapy
+				outFields: ["*"],				//pobranie wszystkich pól z tabeli atrybutów warstwy, w tym pole 'Nazwa'
+				infoTemplate: szablon			//przypisanie szablonu okna podręcznego do wyświetlenia atrybutów obiektów na mapie
+			});
+			map.addLayer(dziewiate); 					//dodanie warstwy do mapy
+			dziewiate.hide();			
+
+			var parter= new FeatureLayer(				//nowy obiekt typu FeatureLayer
+				"http://services2.arcgis.com/efCSZ41PyIWbmjYh/arcgis/rest/services/budynki/FeatureServer/0", { //adres URL usługi
+				mode: FeatureLayer.MODE_SNAPSHOT,		//tryb zapytania - dodanie wszystkich danych do mapy
+				outFields: ["*"],				//pobranie wszystkich pól z tabeli atrybutów warstwy, w tym pole 'Nazwa'
+				infoTemplate: szablon			//przypisanie szablonu okna podręcznego do wyświetlenia atrybutów obiektów na mapie
+			});
+			map.addLayer(parter); 					//dodanie warstwy do mapy
+			parter.show();
+			var currentLayer = parter;
+			
+			/* !# Koniec
+				parter zostal wczytany, jesli uzytkownik wybierze inna warstwe
+				chowam obecna funkcja parter.hide();
+				i wczytuje nastepna
+				*/
+				
+			
+			
+			
+			
+			//Etap 3.0: Dodanie do mapy przycisku do lokalizacji oraz podziałki liniowej
+				
+			
+			
+			//Funkcja do przełączanie map bazowych między OSM a ulicami
+           $(document).ready(function () {
+				$("#basemapList li").click(function(e) {
+					switch (e.target.text) {
+					  case "Mapa drogowa":
+						map.setBasemap("streets");
+						$(".navbar-toggle").click()	
+						break;
+					  case "Mapa OSM":
+						map.setBasemap("osm");
+						$(".navbar-toggle").click()	
+						break;
+									}						
+				});
+				
+				$("#warstwaUnique li").click(function(e) {
+					switch (e.target.text) {
+					  case "-1":
+						currentLayer.hide();
+						piwnica.show();
+						currentLayer=piwnica;
+						$(".navbar-toggle").click()	
+						break;
+						
+					  case "0":
+						currentLayer.hide();
+						parter.show();
+						currentLayer=parter;
+						$(".navbar-toggle").click()	
+						break;
+						
+					case "1":
+						currentLayer.hide();
+						pierwsze.show();
+						currentLayer=pierwsze;
+						$(".navbar-toggle").click()	
+						break;
+						
+					case "2":
+						currentLayer.hide();
+						drugie.show();
+						currentLayer=drugie;
+						$(".navbar-toggle").click()	
+						break;
+						
+					case "3":
+						currentLayer.hide();
+						trzecie.show();
+						currentLayer=trzecie;
+						$(".navbar-toggle").click()	
+						break;
+						
+					case "4":
+						currentLayer.hide();
+						czwarte.show();
+						currentLayer=czwarte;
+						$(".navbar-toggle").click()	
+						break;
+						
+					case "5":
+						currentLayer.hide();
+						piate.show();
+						currentLayer=piate;
+						$(".navbar-toggle").click()	
+						break;
+						
+					case "6":
+						currentLayer.hide();
+						szoste.show();
+						currentLayer=szoste;
+						$(".navbar-toggle").click()	
+						break;
+						
+					case "7":
+						currentLayer.hide();
+						siodme.show();
+						currentLayer=siodme;
+						$(".navbar-toggle").click()	
+						break;
+						
+					case "8":
+						currentLayer.hide();
+						osme.show();
+						currentLayer=osme;
+						$(".navbar-toggle").click()	
+						break;
+						
+					case "9":
+						currentLayer.hide();
+						dziewiate.show();
+						currentLayer=dziewiate;
+						$(".navbar-toggle").click()	
+						break;
+									}						
+				});
+			
+			//Definicja zmiennej do przechowywania bieżącej pozycji oraz adresów URL do usług geoprzetwarzania
+			var pointCoord;
+			var analizaObszarUrl = new ServiceAreaTask("https://route.arcgis.com/arcgis/rest/services/World/ServiceAreas/NAServer/ServiceArea_World/");
+			var analizaNajblizszaStacjaUrl = new ClosestFacilityTask("http://route.arcgis.com/arcgis/rest/services/World/ClosestFacility/NAServer/ClosestFacility_World/");
+			//Etap 3.1: Konfiguracja proxy - usuń komentarze i zmień ścieżkę do aplikacji proxy
+			//urlUtils.addProxyRule({
+					//urlPrefix: "route.arcgis.com", 
+					//proxyUrl: "http://<nazwa Twojego komputera>/proxy/proxy.ashx"
+			//  });
+			
+			
+			//Przechowanie grafiki bieżącej pozycji wraz z atrybutami 
+			function przyciskLokalizujFn(response){
+				pointCoord = response.graphic;
+			}
+			
+			//Wyświetlenie bieżącej pozycji na mapie
+			function lokMenu(){
+			$(".navbar-toggle").click();
+			przyciskLokalizuj.locate();
+				
+			}
+			
+			//Wyczyszczenie wszystkich wyników analiz i bieżącej pozycji z mapy
+			function czyscGrafikiFn(){
+			$(".navbar-toggle").click();
+			map.graphics.clear();
+				
+			}
+			//Etap 4.0: Wyszukanie najbliżeszej stacji rowerowej
+			
+					
+					//Określenie lokalizacji zdarzenia (bieżąca lokalizacja)
+					
+					
+					//Określenie lokalizacji miejsc docelowych (stacje rowerowe)
+					
+					
+					//Etap 4.1: Wysłanie żądania do serwera z parametrami wejściowymi analizy. 
+					//W przypadku powodzenia zostanie uruchiona funckja - najblizszaWynik. 
+					//W przypadku wystąpienia bledu - wystapilBlad.
+					
+					//przetwarzanie wyniku analizy -  wynikAnalizy
+				
+					
+					//zdefionowanie symbolu wyświetlania trasy
+					
+					//funckja wyświetlająca bląd w przypadku niepowodzenia
+					
+			
+			
+			//Etap 5.0 Funkacja do wyzanczenia strefy dojazdu w czasie 20 minut od bieżącej pozycji
+			
+					
+					//określenie lokalizacji zdarzenia (bieżąca lokalizacja)
+					
+				//określenie parametrów wejściowych do analizy strefy dojazdu
+		 		
+					
+					//Etap 5.1: Wysłanie żądania do serwera z parametrami wejściowymi. 
+					//W przypadku powodzenia zostanie uruchomiona funkcja - utworzObszar. 
+					//W przypadku wystąpienia błędu - wystapilBlad.
+					
+										//zdefionowanie symbolu wyświetlania obszaru
+										
+											//utworzenie tablicy z wynikową strefą
+									 
+			
+			//Etap 6: Wywołanie odpowiednich funkcji po kliknięniu określonego przycisku lub wystąpienia odpowiedniego zdarzenia				
+            });
+        });
+    </script>
+
+    <!-- Bootstrap core JavaScript
+    ================================================== -->
+    <!-- Placed at the end of the document so the pages load faster -->
+    <script src="http://code.jquery.com/jquery-1.10.1.min.js"></script>
+    <script src="//netdna.bootstrapcdn.com/bootstrap/3.1.1/js/bootstrap.min.js"></script>
+  </body>
+</html>

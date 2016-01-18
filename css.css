@@ -1,0 +1,21 @@
+body {
+  padding-top: 50px;
+}
+.starter-template {
+  padding: 40px 15px;
+  text-align: center;
+}
+#mapDiv {
+        min-height: 50px;        
+}
+#locateButtonCss {
+	  	position: absolute;
+		top: 70px;
+		right: 22px;
+		z-index: 50;
+		background-color: rgba(0, 0, 0, 1);
+		border-bottom-right-radius: 5px;
+		border-bottom-left-radius: 5px;
+		border-top-right-radius: 5px;
+		border-top-left-radius: 5px;
+}
